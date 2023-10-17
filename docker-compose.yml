@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # Redis
+  redis-stack:
+    container_name: redis-stack
+    ports:
+      - '6379:6379'
+      - '8001:8001'
+    image: 'redis/redis-stack:latest'
+
+  producer:
+    build:
+      context: .
+      dockerfile: cmd/producer/Dockerfile
+    ports:
+      - "4080:4080"
+    environment:
+      - STREAM_NAME=requests
+
+  record-1:
+    build:
+      context: .
+      dockerfile: cmd/consumer/Dockerfile
+    ports:
+      - "4081:4081"
+    environment:
+      - CONSUMER_NAME=record-1
+      - CONSUMER_GROUP=record
+      - STREAM_NAME=requests
+
+  record-2:
+    build:
+      context: .
+      dockerfile: cmd/consumer/Dockerfile
+    ports:
+      - "4082:4082"
+    environment:
+      - CONSUMER_NAME=record-2
+      - CONSUMER_GROUP=record
+      - STREAM_NAME=requests
+
+  analyze-1:
+    build:
+      context: .
+      dockerfile: cmd/consumer/Dockerfile
+    ports:
+      - "4083:4083"
+    environment:
+      - CONSUMER_NAME=analyze-1
+      - CONSUMER_GROUP=analyze
+      - STREAM_NAME=requests
+
+  analyze-2:
+    build:
+      context: .
+      dockerfile: cmd/consumer/Dockerfile
+    ports:
+      - "4084:4084"
+    environment:
+      - CONSUMER_NAME=analyze-2
+      - CONSUMER_GROUP=analyze
+      - STREAM_NAME=requests
+
+  janitor:
+    build:
+      context: .
+      dockerfile: cmd/janitor/Dockerfile
+    ports:
+      - "4085:4085"
+    environment:
+      - CONSUMER_GROUPS=analyze,record

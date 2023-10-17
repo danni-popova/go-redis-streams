@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/caarlos0/env/v9"
 	"github.com/redis/go-redis/v9"
@@ -10,15 +11,8 @@ import (
 	"github.com/danni-popova/go-redis-streams/stream"
 )
 
-const (
-	ConsumerName = "consumer-1"
-	StreamName   = "demo"
-)
-
 type Config struct {
-	ConsumerGroup string `env:"CONSUMER_GROUPS"`
-	ConsumerName  string `env:"CONSUMER_NAME"`
-	StreamName    string `env:"STREAM_NAME"`
+	ConsumerGroups []string `env:"CONSUMER_GROUPS" envSeparator:","`
 }
 
 func main() {
@@ -27,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(cfg)
+	log.Println(cfg.ConsumerGroups)
 
 	ctx := context.Background()
 
@@ -44,17 +38,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	consumer, err := stream.NewConsumer(rdb, cfg.ConsumerName, cfg.StreamName).WithGroup(ctx, cfg.ConsumerGroup)
-	if err != nil {
-		log.Fatal("couldn't create consumer group")
-	}
+	janitor := stream.NewJanitor(rdb, "demo")
 
 	for {
-		msgId := ""
-		message, msgId, err := consumer.Consume(ctx, msgId)
-		if err != nil {
-			log.Fatal(err)
+		for _, group := range cfg.ConsumerGroups {
+			janitor.GetPendingId(ctx, group)
 		}
-		log.Println(message)
+
+		time.Sleep(time.Second * 5)
 	}
 }

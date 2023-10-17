@@ -5,16 +5,24 @@ import (
 	"log"
 	"time"
 
+	"github.com/caarlos0/env/v9"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/danni-popova/go-redis-streams/stream"
 )
 
-const (
-	StreamName = "demo"
-)
+type Config struct {
+	StreamName string `env:"STREAM_NAME"`
+}
 
 func main() {
+	cfg := Config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println(cfg.StreamName)
+
 	ctx := context.Background()
 
 	// Connect to Redis
@@ -30,7 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	producer := stream.NewProducer(rdb, StreamName)
+	producer := stream.NewProducer(rdb, cfg.StreamName)
 
 	for {
 		err := producer.Produce(ctx, map[string]string{"messageId": "message"})
