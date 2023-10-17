@@ -1,12 +1,17 @@
+FROM golang:1.21 as builder
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
-COPY *.go ./
+COPY cmd .
 
 RUN go mod download
 
 RUN go build -o /go/bin/app cmd/janitor/main.go
 
-EXPOSE 4085
+# We use a separate locked down runner container, so copy the binaries in
+FROM gcr.io/distroless/static-debian12:nonroot as runner
+WORKDIR /app
+COPY --from=builder /go/bin/app /app/main
 
-CMD [ "/cmd/main" ]
+CMD [ "/app/main" ]
