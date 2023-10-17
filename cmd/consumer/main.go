@@ -10,11 +10,6 @@ import (
 	"github.com/danni-popova/go-redis-streams/stream"
 )
 
-const (
-	ConsumerName = "consumer-1"
-	StreamName   = "demo"
-)
-
 type Config struct {
 	ConsumerGroup string `env:"CONSUMER_GROUPS"`
 	ConsumerName  string `env:"CONSUMER_NAME"`
@@ -33,7 +28,7 @@ func main() {
 
 	// Connect to Redis
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "redis-stack:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -44,7 +39,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	consumer, err := stream.NewConsumer(rdb, cfg.ConsumerName, cfg.StreamName).WithGroup(ctx, cfg.ConsumerGroup)
+	consumer, err := stream.NewConsumer(rdb, cfg.ConsumerName, cfg.StreamName).
+		WithGroup(ctx, cfg.ConsumerGroup)
 	if err != nil {
 		log.Fatal("couldn't create consumer group")
 	}
