@@ -45,6 +45,6 @@ func main() {
 			janitor.GetPendingId(ctx, group)
 		}
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second)
 	}
 }

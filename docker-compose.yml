@@ -17,6 +17,8 @@ services:
       - "4080:4080"
     environment:
       - STREAM_NAME=requests
+    depends_on:
+          - redis-stack
 
   record-1:
     build:
@@ -28,6 +30,8 @@ services:
       - CONSUMER_NAME=record-1
       - CONSUMER_GROUP=record
       - STREAM_NAME=requests
+    depends_on:
+      - redis-stack
 
   record-2:
     build:
@@ -39,6 +43,8 @@ services:
       - CONSUMER_NAME=record-2
       - CONSUMER_GROUP=record
       - STREAM_NAME=requests
+    depends_on:
+      - redis-stack
 
   analyze-1:
     build:
@@ -50,6 +56,8 @@ services:
       - CONSUMER_NAME=analyze-1
       - CONSUMER_GROUP=analyze
       - STREAM_NAME=requests
+    depends_on:
+      - redis-stack
 
   analyze-2:
     build:
@@ -61,6 +69,8 @@ services:
       - CONSUMER_NAME=analyze-2
       - CONSUMER_GROUP=analyze
       - STREAM_NAME=requests
+    depends_on:
+      - redis-stack
 
   janitor:
     build:
@@ -70,3 +80,5 @@ services:
       - "4085:4085"
     environment:
       - CONSUMER_GROUPS=analyze,record
+    depends_on:
+      - redis-stack

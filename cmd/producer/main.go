@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/caarlos0/env/v9"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 
 	"github.com/danni-popova/go-redis-streams/stream"
 )
@@ -16,12 +17,16 @@ type Config struct {
 }
 
 func main() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	log := logger.Sugar()
+
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println(cfg.StreamName)
+	log.Infow("config parsed", "config", cfg)
 
 	ctx := context.Background()
 
@@ -38,13 +43,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	producer := stream.NewProducer(rdb, cfg.StreamName)
+	producer := stream.NewProducer(rdb, cfg.StreamName).WithLogger(log)
+	counter := 0
 
 	for {
-		err := producer.Produce(ctx, map[string]string{"messageId": "message"})
+		err := producer.Produce(ctx, map[string]string{
+			"message": fmt.Sprintf("message-%d", counter),
+		})
 		if err != nil {
-			log.Fatal("couldn't write to stream")
+			log.Errorw("couldn't write to stream", "error", err)
 		}
-		time.Sleep(time.Second)
+		counter++
+		time.Sleep(time.Second / 8)
 	}
 }

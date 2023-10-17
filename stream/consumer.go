@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type Consumer struct {
@@ -11,6 +12,7 @@ type Consumer struct {
 	group      string
 	consumerId string
 	stream     string
+	log        *zap.SugaredLogger
 }
 
 // NewConsumer will return a consumer reading from the specified stream.
@@ -24,19 +26,22 @@ func NewConsumer(rdb *redis.Client, consumerId, stream string) *Consumer {
 	}
 }
 
+// WithLogger attaches the a zap Logger
+func (c *Consumer) WithLogger(logger *zap.SugaredLogger) *Consumer {
+	c.log = logger
+	return c
+}
+
 // WithGroup will attempt to create the consumer group with the specified group name
 // and will set it for the consumer, so messages can be read
 func (c *Consumer) WithGroup(ctx context.Context, group string) (*Consumer, error) {
 	// If we specify 0, the consumer group will consume all the messages
 	// in the stream history to start with.
-	result := c.rdb.XGroupCreate(ctx, c.stream, group, "0")
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
+	result := c.rdb.XGroupCreateMkStream(ctx, c.stream, group, "0")
 
 	// If the group was created successfully, set the group name
 	c.group = group
-	return c, nil
+	return c, result.Err()
 }
 
 // Consume will read a message from the set group and return its value and ID.
@@ -49,12 +54,14 @@ func (c *Consumer) Consume(ctx context.Context, id string) (map[string]interface
 		id = ">"
 	}
 
-	result := c.rdb.XReadGroup(ctx, &redis.XReadGroupArgs{
+	args := &redis.XReadGroupArgs{
 		Streams:  []string{c.stream, id},
 		Group:    c.group,
 		Consumer: c.consumerId,
 		Count:    1,
-	})
+	}
+
+	result := c.rdb.XReadGroup(ctx, args)
 
 	if result.Err() != nil {
 		return nil, "", result.Err()

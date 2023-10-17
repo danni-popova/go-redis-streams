@@ -25,7 +25,6 @@ func (j *Janitor) GetPendingId(ctx context.Context, group string) {
 	if result.Err() != nil {
 		return
 	}
-
 	log.Println(result.Val())
 }
 
