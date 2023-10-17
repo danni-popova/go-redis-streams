@@ -19,13 +19,9 @@ func NewJanitor(rdb *redis.Client, stream string) *Janitor {
 	}
 }
 
-func (j *Janitor) GetPendingId(ctx context.Context, group string) {
+func (j *Janitor) GetPendingId(ctx context.Context, group string) (*redis.XPending, error) {
 	result := j.rdb.XPending(ctx, j.stream, group)
-
-	if result.Err() != nil {
-		return
-	}
-	log.Println(result.Val())
+	return result.Val(), result.Err()
 }
 
 func (j *Janitor) Cleanup(ctx context.Context, minId string) {

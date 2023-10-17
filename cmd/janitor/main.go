@@ -2,26 +2,31 @@ package main
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/caarlos0/env/v9"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 
 	"github.com/danni-popova/go-redis-streams/stream"
 )
 
 type Config struct {
 	ConsumerGroups []string `env:"CONSUMER_GROUPS" envSeparator:","`
+	StreamName     string   `env:"STREAM_NAME"`
 }
 
 func main() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	log := logger.Sugar()
+
 	cfg := Config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println(cfg.ConsumerGroups)
+	log.Infow("config parsed", "config", cfg)
 
 	ctx := context.Background()
 
@@ -35,14 +40,23 @@ func main() {
 	// Test we can read from Redis
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalw("couldn't ping redis", "error", err)
 	}
 
-	janitor := stream.NewJanitor(rdb, "demo")
+	janitor := stream.NewJanitor(rdb, cfg.StreamName)
 
 	for {
 		for _, group := range cfg.ConsumerGroups {
-			janitor.GetPendingId(ctx, group)
+			result, err := janitor.GetPendingId(ctx, group)
+			if err != nil {
+				log.Errorw("XPENDING returned an error",
+					"group", group,
+					"error", err)
+				continue
+			}
+			log.Infow("XPENDING returned info",
+				"XPENDING", result,
+				"group", group)
 		}
 
 		time.Sleep(time.Second)

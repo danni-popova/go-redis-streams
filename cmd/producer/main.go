@@ -54,6 +54,6 @@ func main() {
 			log.Errorw("couldn't write to stream", "error", err)
 		}
 		counter++
-		time.Sleep(time.Second / 8)
+		time.Sleep(time.Millisecond)
 	}
 }

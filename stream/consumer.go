@@ -55,7 +55,7 @@ func (c *Consumer) Consume(ctx context.Context, id string) (map[string]interface
 	}
 
 	args := &redis.XReadGroupArgs{
-		Streams:  []string{c.stream, id},
+		Streams:  []string{c.stream, ">"},
 		Group:    c.group,
 		Consumer: c.consumerId,
 		Count:    1,

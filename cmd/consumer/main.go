@@ -16,6 +16,11 @@ type Config struct {
 	StreamName    string `env:"STREAM_NAME"`
 }
 
+const (
+	min = 500
+	max = 5000
+)
+
 func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
@@ -58,6 +63,12 @@ func main() {
 			log.Warnw("couldn't consume message", "error", err)
 			continue
 		}
+
+		// This can simulate the consumer doing some kind of processing
+		// using the message - analyzing, persisting to DB, actioning etc.
+		//waitFor := rand.Intn(max-min) + min
+		//log.Infow("waiting", "duration", waitFor)
+		//time.Sleep(time.Millisecond * time.Duration(waitFor))
 
 		err = consumer.Acknowledge(ctx, msgId)
 		if err != nil {

@@ -80,5 +80,6 @@ services:
       - "4085:4085"
     environment:
       - CONSUMER_GROUPS=analyze,record
+      - STREAM_NAME=requests
     depends_on:
       - redis-stack
